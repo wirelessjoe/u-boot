@@ -1,0 +1,35 @@
+stages:
+  - build
+
+variables:
+  DEBIAN_FRONTEND: noninteractive
+
+uboot-build:
+  stage: build
+  tags:
+    - saas-linux-small-arm64
+  image: ubuntu:22.04
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq
+      bc bison build-essential
+      coccinelle device-tree-compiler dfu-util efitools flex gcc gdisk
+      graphviz imagemagick libgnutls28-dev libguestfs-tools liblz4-tool
+      libncurses-dev libpython3-dev libsdl2-dev libssl-dev lz4 lzma mkbootimg
+      openssl pkg-config python3 python3-asteval python3-coverage
+      python3-filelock python3-pkg-resources python3-pycryptodome
+      python3-pyelftools python3-pytest python3-pytest-xdist
+      python3-sphinx-rtd-theme python3-subunit python3-testtools
+      python3-virtualenv swig uuid-dev xxd
+  script:
+    - make O=.output xiaomi-nabu_defconfig
+    - make O=.output -j$(nproc)
+    - gzip .output/u-boot-nodtb.bin -c > .output/u-boot-nodtb.bin.gz
+    - cat .output/u-boot-nodtb.bin.gz .output/dts/upstream/src/arm64/qcom/sm8150-xiaomi-nabu.dtb > /tmp/uboot-dtb
+    - mkbootimg --kernel_offset '0x00008000' --pagesize '4096' --kernel /tmp/uboot-dtb -o .output/u-boot.img
+  artifacts:
+    paths:
+      - .output/u-boot.img
+      - .output/u-boot-nodtb.bin
+      - .output/dts/upstream/src/arm64/qcom/sm8150-xiaomi-nabu.dtb
+    expire_in: 1 week
