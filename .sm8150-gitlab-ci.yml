@@ -3,8 +3,9 @@ stages:
 
 variables:
   DEBIAN_FRONTEND: noninteractive
+  OUTPUT_DIR: ".output"
 
-uboot-build:
+.uboot-template: &uboot-template
   stage: build
   tags:
     - saas-linux-small-arm64
@@ -21,15 +22,52 @@ uboot-build:
       python3-pyelftools python3-pytest python3-pytest-xdist
       python3-sphinx-rtd-theme python3-subunit python3-testtools
       python3-virtualenv swig uuid-dev xxd
+    - |
+      if [ "$USB_MODE" = "host" ]; then
+        sed -i 's/dr_mode = "otg"/dr_mode = "host"/g' dts/upstream/src/arm64/qcom/sm8150-*.dts
+      fi
+
   script:
-    - make O=.output xiaomi-nabu_defconfig
-    - make O=.output -j$(nproc)
-    - gzip .output/u-boot-nodtb.bin -c > .output/u-boot-nodtb.bin.gz
-    - cat .output/u-boot-nodtb.bin.gz .output/dts/upstream/src/arm64/qcom/sm8150-xiaomi-nabu.dtb > /tmp/uboot-dtb
-    - mkbootimg --kernel_offset '0x00008000' --pagesize '4096' --kernel /tmp/uboot-dtb -o .output/u-boot.img
+    - make O=$OUTPUT_DIR $DEFCONFIG $FRAGMENTS
+    - make O=$OUTPUT_DIR -j$(nproc)
+    - gzip $OUTPUT_DIR/u-boot-nodtb.bin -c > $OUTPUT_DIR/u-boot-nodtb.bin.gz
+    - cat $OUTPUT_DIR/u-boot-nodtb.bin.gz $OUTPUT_DIR/dts/upstream/src/arm64/qcom/${DEVICE}.dtb > $OUTPUT_DIR/uboot-dtb
+    - mkbootimg --base '0x0' --kernel_offset '0x00008000' --pagesize '4096' --kernel $OUTPUT_DIR/uboot-dtb -o $OUTPUT_DIR/u-boot.img
+
   artifacts:
+    name: "u-boot-${DEVICE}-usb-${USB_MODE}.img"
     paths:
-      - .output/u-boot.img
-      - .output/u-boot-nodtb.bin
-      - .output/dts/upstream/src/arm64/qcom/sm8150-xiaomi-nabu.dtb
+      - $OUTPUT_DIR/u-boot.img
     expire_in: 1 week
+
+build_xiaomi_nabu_host:
+  <<: *uboot-template
+  variables:
+    DEVICE: sm8150-xiaomi-nabu
+    USB_MODE: host
+    DEFCONFIG: qcom_defconfig
+    FRAGMENTS: sm8150-xiaomi-nabu.config
+
+build_xiaomi_nabu_peripheral:
+  <<: *uboot-template
+  variables:
+    DEVICE: sm8150-xiaomi-nabu
+    USB_MODE: peripheral
+    DEFCONFIG: qcom_defconfig
+    FRAGMENTS: sm8150-xiaomi-nabu.config
+
+build_google_flame_host:
+  <<: *uboot-template
+  variables:
+    DEVICE: sm8150-xiaomi-nabu
+    USB_MODE: host
+    DEFCONFIG: qcom_defconfig
+    FRAGMENTS: sm8150-google-flame.config
+
+build_google_flame_peripheral:
+  <<: *uboot-template
+  variables:
+    DEVICE: sm8150-xiaomi-nabu
+    USB_MODE: peripheral
+    DEFCONFIG: qcom_defconfig
+    FRAGMENTS: sm8150-google-flame.config

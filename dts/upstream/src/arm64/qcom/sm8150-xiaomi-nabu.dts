@@ -43,26 +43,6 @@
 		wifi0 = &wifi;
 	};
 
-	chosen {
-		stdout-path = "serial0:115200n8";
-	};
-	
-	chosen {
-		#address-cells = <2>;
-		#size-cells = <2>;
-		ranges;
-
-		framebuffer: framebuffer@9c000000 {
-			compatible = "simple-framebuffer";
-			reg = <0x0 0x9c000000 0x0 0x02400000>;
-			width = <1600>;
-			height = <2560>;
-			stride = <(1600 * 4)>;
-			format = "a8r8g8b8";
-		};
-	};
-
-
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -525,7 +505,7 @@
 		compatible = "lionsemi,ln8000";
 		reg = <0x51>;
 
-		status = "disabled";
+		status = "okay";
 
 		irq-gpios = <&tlmm 36 0x2002>;
 
@@ -634,7 +614,6 @@
 		vddio-supply = <&vreg_l14a_1p8>;
 		reset-gpios = <&tlmm 6 GPIO_ACTIVE_LOW>;
 		backlight = <&backlight>;
-		rotation = <90>;
 
 		ports {
 			#address-cells = <1>;
@@ -727,7 +706,7 @@
 					 PDO_FIXED_DUAL_ROLE |
 					 PDO_FIXED_USB_COMM |
 					 PDO_FIXED_DATA_SWAP)
-					 PDO_VAR(5000, 12000, 3000)>;
+					 PDO_VAR(5000, 9000, 3000)>;
 
 		op-sink-microwatt = <10000000>;
 
