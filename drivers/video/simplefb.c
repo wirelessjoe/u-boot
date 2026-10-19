@@ -80,7 +80,7 @@ static int simple_video_probe(struct udevice *dev)
 
 	stride = ofnode_read_u32_default(node, "stride",
 					 width * VNBYTES(uc_priv->bpix));
-	if (stride < width * VNBYTES(uc_priv->bpix) ||
+	if ((u64)stride < (u64)width * VNBYTES(uc_priv->bpix) ||
 	    stride > size / height) {
 		log_err("%s: invalid framebuffer stride: %u\n", __func__, stride);
 		return -EINVAL;
